@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Tank Problem</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eaf6ff;
+            padding: 25px;
+        }
+
+        h1 {
+            color: navy;
+        }
+
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+        }
+
+        input {
+            width: 300px;
+            max-width: 90%;
+        }
+
+        button {
+            background-color: navy;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #result {
+            font-size: 20px;
+            font-weight: bold;
+            color: darkgreen;
+        }
+
+        #diagram {
+            margin-top: 20px;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        svg {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Water Tank Calculator</h1>
+
+    <p>Enter the block heights separated by commas.</p>
+
+    <p>Example: 0,4,0,0,0,6,0,6,4,0</p>
+
+    <input
+        type="text"
+        id="heights"
+        value="0,4,0,0,0,6,0,6,4,0"
+    >
+
+    <br>
+
+    <button onclick="calculateWater()">Calculate Water</button>
+
+    <p id="result">Water stored will appear here.</p>
+
+    <div id="diagram"></div>
+
+    <script>
+        function calculateWater() {
+
+            // Step 1: Read the input
+            let input = document.getElementById("heights").value;
+
+            // Step 2: Convert the input into numbers
+            let heights = input.split(",").map(Number);
+
+            // Step 3: Check the input
+            if (
+                input.trim() === "" ||
+                heights.some(h => !Number.isInteger(h) || h < 0)
+            ) {
+                document.getElementById("result").textContent =
+                    "Please enter non-negative whole numbers separated by commas.";
+
+                document.getElementById("diagram").innerHTML = "";
+                return;
+            }
+
+            // Step 4: Find the number of blocks
+            let n = heights.length;
+
+            // Step 5: Store the tallest blocks on the left
+            let leftMax = [];
+            let tallest = 0;
+
+            for (let i = 0; i < n; i++) {
+                tallest = Math.max(tallest, heights[i]);
+                leftMax[i] = tallest;
+            }
+
+            // Step 6: Store the tallest blocks on the right
+            let rightMax = [];
+            tallest = 0;
+
+            for (let i = n - 1; i >= 0; i--) {
+                tallest = Math.max(tallest, heights[i]);
+                rightMax[i] = tallest;
+            }
+
+            // Step 7: Calculate the water at each position
+            let totalWater = 0;
+            let water = [];
+
+            for (let i = 0; i < n; i++) {
+                water[i] = Math.max(
+                    0,
+                    Math.min(leftMax[i], rightMax[i]) - heights[i]
+                );
+
+                totalWater += water[i];
+            }
+
+            // Step 8: Display the answer
+            document.getElementById("result").textContent =
+                "Total water stored: " + totalWater + " units";
+
+            // Step 9: Draw the blocks and water using SVG
+            drawDiagram(heights, water);
+        }
+
+        function drawDiagram(heights, water) {
+
+            let maxHeight = Math.max(...heights, 1);
+            let cellSize = 35;
+            let leftPadding = 25;
+            let topPadding = 15;
+
+            let width = leftPadding * 2 + heights.length * cellSize;
+            let height = topPadding * 2 + maxHeight * cellSize;
+
+            let svg = `
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 ${width} ${height}"
+                    width="${width}"
+                    role="img"
+                    aria-label="Diagram of blocks and trapped water"
+                >
+            `;
+
+            for (let i = 0; i < heights.length; i++) {
+
+                for (let level = 1; level <= maxHeight; level++) {
+
+                    let x = leftPadding + i * cellSize;
+                    let y = topPadding + (maxHeight - level) * cellSize;
+
+                    let color = "white";
+
+                    if (level <= heights[i]) {
+                        color = "#D9A441";
+                    } else if (level <= heights[i] + water[i]) {
+                        color = "#29B6E6";
+                    }
+
+                    svg += `
+                        <rect
+                            x="${x}"
+                            y="${y}"
+                            width="${cellSize}"
+                            height="${cellSize}"
+                            fill="${color}"
+                            stroke="#777"
+                        />
+                    `;
+                }
+
+                svg += `
+                    <text
+                        x="${leftPadding + i * cellSize + cellSize / 2}"
+                        y="${height - 2}"
+                        font-size="12"
+                        text-anchor="middle"
+                        fill="#222"
+                    >${heights[i]}</text>
+                `;
+            }
+
+            svg += "</svg>";
+
+            document.getElementById("diagram").innerHTML = svg;
+        }
+
+        // Calculate the water when the page first opens
+        calculateWater();
+    </script>
+
+</body>
+</html>
